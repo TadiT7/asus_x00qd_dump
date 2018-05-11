@@ -1,0 +1,53 @@
+if [ -n "$1" ]; then
+	export CMD1=$1
+else
+	echo "CMD1 not assigned !"
+	echo " 0 (all), 1 (Switch key), 2 (back key)"
+	exit
+fi
+
+if [ -n "$2" ]; then
+	export CMD2=$2
+else
+	echo "CMD2 not assigned !"
+	echo " 1 (Off), 2 (On)"
+	exit
+fi
+
+if [ "$CMD1" -lt "0" -o "$CMD1" -gt "0" ]; then
+	if [ "$CMD1" -eq "1" -o "$CMD1" -eq "2" ]; then
+		echo "Para1 $CMD1 not support !"
+		exit
+	fi
+	echo "Para1 $CMD1 not assigned !"
+	echo " 0 (all), 1 (Switch key), 2 (back key)"
+	exit
+fi
+
+if [ "$CMD2" -lt "1" -o "$CMD2" -gt "2" ]; then
+	echo "Para2 $CMD2 not assigned !"
+	echo " 1 (Off), 2 (On)"
+	exit
+fi
+
+if [ "$CMD2" -eq "1" ]; then
+	echo 0 > /sys/class/leds/button-backlight/brightness
+
+	result1=`cat /sys/class/leds/button-backlight/brightness`
+
+	if [ "$result1" -eq "0" ]; then
+		echo PASS
+	else
+		echo FAIL
+	fi
+
+elif [ "$CMD2" -eq "2" ]; then
+	echo 255 > /sys/class/leds/button-backlight/brightness
+
+	result=`cat /sys/class/leds/button-backlight/brightness`
+	if [ "$result" -eq "255" ]; then
+		echo PASS
+	else
+		echo FAIL
+	fi
+fi

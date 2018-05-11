@@ -1,0 +1,13 @@
+
+lb=`cat /sys/class/timed_output/vibrator/dump_regs | sed -n 2p | tr -d '\n' | tail -c 2`
+hb=`cat /sys/class/timed_output/vibrator/dump_regs | sed -n 3p | tr -d '\n' | tail -c 2 | cut -c1`
+
+#echo ${hb}${lb}
+
+if [ "${hb}${lb}" = "xx0" ]
+then
+    printf "0"
+else
+    printf '%d' $((0x30D40 / 0x${hb}${lb}))
+fi
+

@@ -1,0 +1,105 @@
+#!/system/bin/sh
+
+TEST_TIMES=-1
+Video_Width=-1
+Video_Hight=-1
+Video_Hight_Half=-1
+tmp=1
+skip_count=0
+
+setprop vidc.enc.log.in 1
+
+if [ $2 == "0" ]; then
+	TEST_TIMES=1
+elif  [ $2 == "1" ]; then
+	TEST_TIMES=0.5
+elif [ $2 == "2" ]; then
+	TEST_TIMES=0.25
+else
+	TEST_TIMES=0
+fi
+
+case $3 in
+	"0")
+		Video_Width=1280
+		Video_Hight=720
+		Video_Hight_Half=360
+	;;
+	"1")
+		Video_Width=1920
+		Video_Hight=1080
+		Video_Hight_Half=540
+	;;
+	"2")
+		Video_Width=3840
+		Video_Hight=2160
+		Video_Hight_Half=1080
+	;;
+	*)
+		Video_Width=0
+		Video_Hight=0
+		Video_Hight_Half=0
+	;;
+esac
+
+if [ $TEST_TIMES == 0 ] || [ $Video_Width == 0 ] || [ $Video_Hight == 0 ] || [ $Video_Hight_Half == 0 ] || [ $1 -gt 1 ] || [ -z $4 ]; then
+	echo 0
+	exit
+else
+	minsize=$(( $Video_Width * $Video_Hight + $Video_Width * $Video_Hight_Half ))
+	#echo "minsize: " $minsize
+	
+	sh /system/bin/am force-stop org.codeaurora.snapcam # fix resume mode back keyevent not usable
+	sh /system/bin/am start -n org.codeaurora.snapcam/com.android.camera.CameraLauncher -e commandID $1 -e TestMode $2 -e TestResolution $3 >> /dev/null
+	sleep 1
+	
+	Filename=$4_${Video_Width}_${Video_Hight}
+	#echo $Filename
+
+	sh /system/bin/input keyevent 27
+
+	sleep $TEST_TIMES
+
+	sh /system/bin/input keyevent 27
+	sleep 1
+	
+	setprop debug.camera.yuv 1
+	
+	#echo "yuv property " $(getprop debug.camera.yuv)
+	sleep 1
+	if [ -d /sdcard/YUV ]; then
+		mv /data/misc/media/*.yuv /data/misc/media/$Filename
+	else
+		mkdir /sdcard/YUV
+		mv /data/misc/media/*.yuv /data/misc/media/$Filename
+	fi
+	
+fi
+
+filesize=$(stat -c%s "/data/misc/media/$Filename")
+count=`expr $filesize / $minsize`
+
+#echo "filesize" $filesize
+
+while [ $count -ne 0 ]
+do
+	#echo "Test"
+	#echo "file " /sdcard/YUV/${Filename}_${tmp}.yuv
+	#echo "count " $count
+	#echo "skip_count" $skip_count
+	dd if=/data/misc/media/$Filename of=/sdcard/YUV/${Filename}_${tmp}.yuv ibs=$minsize count=1 skip=$skip_count 2> /dev/null
+	tmp=$(($tmp+1))
+	skip_count=$(($skip_count+1))
+	count=$(($count-1))
+done
+
+if [ -e /data/misc/media/$Filename ]; then
+		rm -rf /data/misc/media/$Filename
+		echo "1"
+	else
+		echo "0"
+fi
+
+setprop debug.camera.yuv 0
+sh /system/bin/am force-stop org.codeaurora.snapcam
+

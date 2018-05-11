@@ -1,0 +1,23 @@
+#!/system/bin/sh
+#echo "$0 $*"> /proc/fac_printklog
+#===============================
+#main 
+#===============================
+#temp=$(cat /sys/class/input/input1/touch_status)
+if [ -f "/sys/bus/i2c/devices/i2c-4/4-0038/fts_test" ] ;then
+#focal touch
+	#echo "focal touch!"
+	echo /system/vendor/bin/ARA_Focal_AUO.ini>/sys/bus/i2c/devices/i2c-4/4-0038/fts_test
+	cat /sys/bus/i2c/devices/i2c-4/4-0038/fts_test
+#	cp /sdcard/TP_Raw_data.txt /data/data/TP_Raw_data.txt
+#	cp /sdcard/TP_Raw_data.csv /data/data/TP_Raw_data.csv
+#	chmod 0777 /data/data/TP_Raw_data.csv
+#	chmod 0777 /data/data/TP_Raw_data.txt
+else
+	echo "NO this panel!"	
+fi
+#*)
+#    echo "NO This Panel!"
+#;;
+
+

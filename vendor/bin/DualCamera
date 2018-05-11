@@ -1,0 +1,877 @@
+#!/system/bin/sh
+#echo "$0 $*"> /proc/fac_printklog
+
+#Author:Sheldon_Li@asus.com
+ATD_Interface_VERSION="V1.2"
+#Camera solution: XXXXXX XXXXXXX
+
+VERSION="V0.2"
+
+
+#script log file
+SCRIPT_LOG_FILE="/sdcard/CameraTest_Script.log"
+
+#apk log file
+APK_LOG_FILE="/sdcard/CameraTest_Apk.log"
+
+#locat log file
+#LOGCAT_LOG_FILE="/data/logcat_log/logcat.txt"
+
+#Debug message switch
+DEBUG=0
+
+mCameraID=`getprop persist.camera.mCameraID`
+
+
+function disableTouch(){ 
+#    echo "Disable touch!!"
+    #echo "==================Disable touch=================" >> $LOGCAT_LOG_FILE
+    #if [ -f "/data/data/touch_function" ]; then
+		#/data/data/touch_function 0 > /dev/null
+    #fi
+
+    if [ -f "/data/data/capsensor_function" ]; then
+   	/data/data/capsensor_function 0  > /dev/null
+    fi
+}
+
+function enableTouch(){ 
+#    echo "Enable touch!!"
+    #echo "==================Enable touch=================" >> $LOGCAT_LOG_FILE
+    #if [ -f "/data/data/touch_function" ]; then
+		#/data/data/touch_function 1 > /dev/null
+    #fi
+
+    if [ -f "/data/data/capsensor_function" ]; then
+   	/data/data/capsensor_function 1  > /dev/null
+    fi
+}
+
+
+
+if [ ! -d "/data/logcat_log/" ]; then
+  mkdir /data/logcat_log/
+fi
+
+if [ ! -d "/data/factory/" ]; then
+  mkdir /data/factory/
+fi
+
+
+logi () {
+  echo "`date` I $@" >> $SCRIPT_LOG_FILE
+  if [ $DEBUG -eq "1" ]
+  then
+    echo "`date +%H:%M:%S` I $@"
+  fi
+}
+
+logd () {
+  echo "`date` D $@" >> $SCRIPT_LOG_FILE
+  if [ $DEBUG -eq "1" ]
+  then
+    echo "`date +%H:%M:%S` D $@"
+  fi
+}
+
+loge () {
+  echo "`date` E $@" >> $SCRIPT_LOG_FILE
+  if [ $DEBUG -eq "1" ]
+  then
+    echo "`date +%H:%M:%S` E $@"
+  fi
+}
+
+
+
+setrawprop() {
+  if [ $1 -eq 1 ]; then 
+      # echo "=========CameraTest setrawprop==========" >> $LOGCAT_LOG_FILE
+		#setprop  persist.camera.HAL3.enabled 0 #disable HAL3
+		setprop  persist.camera.dumpimg 16
+		setprop  persist.camera.zsl_raw 1
+		setprop  persist.camera.raw_yuv 1
+		setprop  persist.camera.raw.dump 1     #HAL3	
+		setprop  persist.camera.snapshot_raw 1
+		setprop  debug.snapshot.raw 1
+  else
+      # echo "=========CameraTest setrawprop==========" >> $LOGCAT_LOG_FILE
+		#setprop  persist.camera.HAL3.enabled 0 #disable HAL3
+		setprop  persist.camera.dumpimg 0
+		setprop  persist.camera.zsl_raw 0
+		setprop  persist.camera.raw_yuv 0
+		setprop  persist.camera.raw.dump 0     #HAL3
+		setprop  persist.camera.snapshot_raw 0
+		setprop  debug.snapshot.raw 0
+  fi
+}
+
+
+#log success/fail message and show processing result on the consol
+#$1:success/fail  $2:return string
+my_exit() { 
+  if [ "$1" == "success" ]
+  then
+    #echo "================== CameraTest command executed success =================" >> $LOGCAT_LOG_FILE
+    logi "<== return success(1)"
+    ATD_ret="1"
+    ret=0
+  else
+    #echo "================== CameraTest command executed failed =================" >> $LOGCAT_LOG_FILE
+    loge "<### return fail(0)"
+    ATD_ret="0"
+    ret=1
+  fi
+
+  echo $ATD_ret
+  exit $ret
+}
+
+help() {
+    logd "help()"
+    echo "
+Test Tool Version: $VERSION
+
+API: ATD TestCommand Interface $ATD_Interface_VERSION
+
+FORMAT: adb shell /data/data/DualCamera para1 para2 para3 ...
+
+RETURN VALUE: 0/1   (0 = fail , 1 = pass)
+
+USAGE:
+  <Enable/Disable dual camera preview.>
+    (para1) 0
+    (para2) 0:off, 1:on
+    (para3) Timedout value (second) 
+
+  <Enable/Disable VGA camera preview.>
+    (para1) 1
+    (para2) 0:off, 1:on
+    (para3) Timedout value (second) 
+
+  <Take picture with af command.>
+    (para1) 2
+    (para2) Saved picture file name
+    (para3) Timedout value 
+
+  <Enable or disable infinity mode.>
+    (para1) 3
+    (para2) 0:off, 1:on
+    (para3) Timedout value 
+
+  <Take picture >
+    (para1) 4
+    (para2) Saved picture file name
+    (para3) Timedout value
+
+  <Take raw picture.>
+    (para1) 5
+    (para2) Saved picture file name
+    (para3) Timedout value
+
+  <Calibration.>
+    (para1) 6
+    (para2) 0: DUAL CAMERA
+
+  <Get golden data.>
+    (para1) 7
+    (para2) 0: TBD
+
+  <Set rk take picture.>
+    (para1) 8
+    (para2) 0: off
+	    1: on
+	
+  <Take picture with af with flash>
+    (para1) 9
+    (para2) Saved picture file name
+    (para3) Timedout value	
+
+  <Take picture with flash>
+    (para1) 10
+    (para2) Saved picture file name
+    (para3) Timedout value
+ 
+  <DIT AF Calibration>
+    (para1) 11
+    (para2) TBD
+    (para3) 0:Generate dit_af_cali Result
+	    1:Inf
+	    2:Macro
+	    3:Middle(30cm)
+	    4:Middle(50cm)
+    (para4) 0: record Vertical calibration
+	    1: OTP search
+	    2: Horizon calibration and record
+     
+"
+exit 0
+}
+
+set_timeout() {
+    logd "> set_timeout($1)"
+    #$1 timeout vale (decimal seconds)
+	#$2 ... break condition
+	#let "TimeOutValue=$1"
+	let "TimeOutValue=15"  #force set timeout is 15s when open dual camera
+	let "retry=0"
+	echo time out value is $TimeOutValue >> $SCRIPT_LOG_FILE
+	
+	while [ $TimeOutValue -ne "0" ]; do
+		cat $APK_LOG_FILE 2>&1 | grep "$2" > /dev/null
+		if [ $? = 0 ]; then
+			rm -rf $APK_LOG_FILE > /dev/null
+			setrawprop 0
+			#trigger rk preisp to sleep after dual preview
+                        #if [ "$2" == "finish startPreview2" ]; then
+                        #   setprop  persist.camera.rk.facsleep 1
+                        #fi
+			sleep 0.3
+
+			#force-stop camera test app if still exist
+			if [ "$2" == "close camera finish" ]; then
+				#pid1=`ps | /system/bin/grep com.example.cameratest | busybox awk '{print $1}'`
+				#if [ "$pid1" != "" ]; then
+					log -p d -t DualCamera "+ force-stop ,close camera +"
+					setprop debug.VFE_dual 0
+					am force-stop com.example.cameratest
+					#echo "================== am force-stop com.example.cameratest=================" >> $LOGCAT_LOG_FILE
+				#fi
+				#enable touch
+				enableTouch;
+			fi
+			my_exit success
+		fi
+		logd "<-time"
+		sleep 0.3
+		let TimeOutValue--
+
+		#add retry inside for open fail
+		if [ $TimeOutValue -lt 5 ] && [ $retry -eq "0" ]; then
+			log -p d -t DualCamera "+ Maybe open fail, retry... +"
+			#echo "Maybe open fail, retry..." >> $LOGCAT_LOG_FILE
+			retry=1
+			TimeOutValue=$1
+			setprop debug.VFE_dual 0
+			am force-stop com.example.cameratest
+			rm -rf $APK_LOG_FILE > /dev/null
+			sleep 1
+			setprop debug.VFE_dual 1
+			am start -n com.example.cameratest/.MainActivity --ei cameramode 0 --es logpath "$APK_LOG_FILE" > /dev/null
+			sleep 1
+		fi
+
+		logd "time out value now is $TimeOutValue"		
+	done
+	
+	rm -rf $APK_LOG_FILE > /dev/null
+	setrawprop 0
+	setprop debug.VFE_dual 0
+	am force-stop com.example.cameratest
+	#enable touch
+	enableTouch;
+	log -p d -t DualCamera "+ open fail timeout +"
+	my_exit fail
+}
+
+set_timeout_infinity() {
+    logd "> set_timeout($1)"
+    #$1 timeout vale (decimal seconds)
+	#$2 ... break condition
+	let "TimeOutValue=$1*10"
+	echo time out value is $TimeOutValue >> $SCRIPT_LOG_FILE
+	while [ $TimeOutValue -ne "0" ]; do
+		cat $APK_LOG_FILE 2>&1 | grep "$2" > /dev/null
+		if [ $? = 0 ]; then
+			rm -rf $APK_LOG_FILE > /dev/null
+			my_exit success
+		fi
+		logd "<-time"
+		sleep 0.1
+		let TimeOutValue--
+		logd "time out value now is $TimeOutValue"		
+	done
+	
+	rm -rf $APK_LOG_FILE > /dev/null
+	log -p e -t DualCamera "+ set_timeout_infinity fail +"
+	my_exit fail
+}
+
+set_timeout_takepic() {
+    logd "> set_timeout($1)"
+    #$1 timeout vale (decimal seconds)
+    #$2 ... break condition
+	#let "TimeOutValue=$1*1"
+	let "TimeOutValue=15"  #force set timeout is 15s when dual camera take pictures
+	echo time out value is $TimeOutValue  >> $SCRIPT_LOG_FILE
+	while [ $TimeOutValue -ne "0" ]; do
+		#cat $APK_LOG_FILE  2>&1 | grep "takePicture finish" > /dev/null
+		#if [ $? = 0 ]; then
+			if [ $mCameraID == 0 ]; then
+			#echo -e "get jpeg , move to sdcard path = $3"
+				cat $APK_LOG_FILE  2>&1 | grep "takePicture finish" > /dev/null
+				if [ $? = 0 ]; then
+						#echo -e "get takePicture finish"
+						log -p d -t DualCamera "+ camera id 0&2 takeJpegPicture  done+"
+						cat $APK_LOG_FILE  2>&1 | grep "takePicture_1 finish" > /dev/null
+								if [ $? = 0 ]; then
+									#echo -e "get takePicture_1 finish"
+									if [ -f "$3_1.jpg" ] && [ -f "$3_2.jpg" ]; then
+										rm -rf $APK_LOG_FILE > /dev/null
+										setrawprop 0
+									log -p d -t DualCamera "+ find camera 0 & 2 Jpeg file return success+"	
+										my_exit success
+									fi
+								fi
+				fi
+			elif [ $mCameraID == 1 ]; then
+				#echo -e "start find front camera take jpeg. "
+				cat $APK_LOG_FILE  2>&1 | grep "takePicture finish" > /dev/null
+				 if [ $? = 0 ]; then
+				log -p d -t DualCamera "+ camera id 1 takeJpegPicture  done+"
+  				if [ -f "$3.jpg" ]; then
+	  				#echo -e "get front camera take jpeg. "
+						rm -rf $APK_LOG_FILE > /dev/null
+						setrawprop 0
+						log -p d -t DualCamera "+ find camera 1 Jpeg file return success+"	
+						my_exit success
+					fi
+				fi
+			fi
+		#fi
+		logd "<-time"
+		sleep 1
+		let TimeOutValue--
+		logd "time out value now is $TimeOutValue"
+	done
+		
+	rm -rf $APK_LOG_FILE > /dev/null
+	setrawprop 0
+	echo off > /dev/rk_preisp #reset rk_preisp
+	my_exit fail
+}
+
+
+set_timeout_takepic_raw() {
+    logd "> set_timeout($1)"
+    #$1 timeout vale (decimal seconds)
+	#$2 ... break condition
+	let "TimeOutValue=$1*10"
+	echo time out value is $TimeOutValue  >> $SCRIPT_LOG_FILE
+	while [ $TimeOutValue -ne "0" ]; do
+		log -p e -t DualCamera "+ takepic_raw E +"
+		if [ $mCameraID == 0 ]; then
+			cat $APK_LOG_FILE  2>&1 | grep "takeRawPicture finish" > /dev/null
+			if [ $? = 0  ]; then
+				if [ -f /data/.tmp/*3024*.raw ]; then
+					#echo -e "find 1st raw , move to sdcard"
+					cp  /data/.tmp/*3024*.raw  $3_1.raw
+					#echo -e "get 1st raw , move to sdcard path = $3"
+				fi
+				cat $APK_LOG_FILE  2>&1 | grep "takeRawPicture_1 finish" > /dev/null
+				if [ $? = 0 ]; then
+						log -p d -t DualCamera "+ camera id 0&2 takeRawPicture  done+"
+						if [ -f /data/.tmp/*2448*.raw ] && [ -f /data/.tmp/*3024*.raw ]; then
+						#echo -e "find 2nd raw move to sdcard "
+						cp  /data/.tmp/*2448*.raw $3_2.raw
+						#echo -e "get 2nd raw , move to sdcard"
+						#echo -e "check 2 raw exist , success"
+						setrawprop 0
+						log -p d -t DualCamera "+ find camera 0 & 2 raw file return success+"
+						my_exit success	
+						fi
+				fi
+			fi
+		elif [ $mCameraID == 1 ]; then
+		cat $APK_LOG_FILE  2>&1 | grep "takeRawPicture finish" > /dev/null
+			if [ $? = 0  ]; then
+				log -p d -t DualCamera "+ camera id 1 takeRawPicture done +"
+				if [ -f  /data/.tmp/*2448*.raw ]; then
+				cp  /data/.tmp/*2448*.raw $3.raw
+				setrawprop 0
+				log -p d -t DualCamera "+ find camera 1 raw file return success+"	
+				my_exit success
+				fi	
+			fi
+		fi
+					
+		let TimeOutValue--
+
+		usleep 100000
+
+		logd "<-time"
+		
+		let TimeOutValue--
+		logd "time out value now is $TimeOutValue"
+	done
+		
+	rm -rf $APK_LOG_FILE > /dev/null
+	setrawprop 0
+	log -p e -t DualCamera "+ takepic_raw timeout return fail +"
+	my_exit fail
+}
+
+#check all status before open camera
+check_all_status(){
+		#check mediaserver restart status
+		#let "check_count=5"
+		#while [ $check_count -ne "0" ]; do
+		#	pid0=`ps | /system/bin/grep mediaserver | /system/bin/grep binder_thr | wc -l`
+		#	if [ "$pid0" == "1" ]; then
+		#		break
+		#	fi
+		#	echo "================== wait mediaserver restart =================" >> $LOGCAT_LOG_FILE
+		#	sleep 3
+		#	let check_count--		
+		#done
+
+		setprop persist.camera.zsl.mode 1     #enable ZSL
+		setprop persist.camera.isprestart 0   #initial ISP status
+		
+		#check phone's battery
+    		battery=`cat /sys/class/power_supply/bms/capacity`
+    		#echo "phone's battery left = $battery" >> $LOGCAT_LOG_FILE
+		log -p d -t DualCamera "+ checkstatus E close all camera ap +"
+		#force-stop camera test app
+		#pid1=`ps | /system/bin/grep com.example.cameratest | busybox awk '{print $1}'`
+		#if [ "$pid1" != "" ]; then
+			setprop debug.VFE_dual 0
+			am force-stop com.example.cameratest
+			sleep 0.3
+			#echo "================== am force-stop com.example.cameratest=================" >> $LOGCAT_LOG_FILE
+		#fi
+
+		#force-stop snap dragon camera app
+		#pid2=`ps | /system/bin/grep org.codeaurora.snapcam | busybox awk '{print $1}'`
+		#if [ "$pid2" != "" ]; then
+			setprop debug.VFE_dual 0
+			am force-stop org.codeaurora.snapcam
+			#echo "================== am force-stop org.codeaurora.snapcam=================" >> $LOGCAT_LOG_FILE
+			sleep 0.3
+		#fi
+		log -p d -t DualCamera "+ checkstatus X close all camera ap +"
+		#off rk_preisp
+		#if   [ -f "/system/bin/preisp_io" ]; then
+		#	isp_status_cnt="20"
+		#	while [ $isp_status_cnt -ne "0" ]; do			
+		#		isp_status=`/system/bin/preisp_io 0x12030200 | busybox awk '{print $5}'`
+		#		if [ $isp_status = "00000000" ]; then
+		#			break
+		#		fi
+		#		echo "================== off rk_preisp=================" >> $LOGCAT_LOG_FILE
+		#		echo off > /dev/rk_preisp
+		#		let isp_status_cnt--
+		#	done	
+		#fi
+
+		#reset gpio141
+		#echo 141 > /sys/class/gpio/export
+		#echo 0 > /sys/class/gpio/gpio141/value
+		#echo 141 > /sys/class/gpio/unexport
+}
+
+#cameramode : 0=rear0&rear1 , 1=rear0 , 2=rear1 , 3=front
+maincamera_preview_switch(){
+	#0: off 
+	if [ "$1" == 0 ]; then
+		#echo "================== CameraTest disable rear_main camera preview start=================" >> $LOGCAT_LOG_FILE
+		setprop persist.camera.mCameraID -1
+		setrawprop 0
+		#am force-stop com.example.cameratest
+		#pid1=`ps | /system/bin/grep com.example.cameratest | busybox awk '{print $1}'`
+		#if [ "$pid1" != "" ]; then
+		log -p d -t DualCamera "+ close camera 0& 2+"
+			am broadcast -a asus.camera.close -f 0x10000000 > /dev/null
+		#else
+			#enable touch
+			enableTouch;
+		log -p d -t DualCamera "+ close camera 0 & 2success, return 1 +"
+			my_exit success
+		#fi
+	fi
+	#1: on
+	if [ "$1" == 1 ]; then
+		#echo "================== CameraTest enable rear_main camera preview start=================" >> $LOGCAT_LOG_FILE
+		setprop persist.camera.mCameraID 0
+		#disable touch
+		disableTouch;
+		#setprop befor preview
+		setrawprop 1
+		#init status before open camera
+		log -p d -t DualCamera "+ before opencamera  0 & 2 , check status E+"
+		check_all_status
+		log -p d -t DualCamera "+ before opencamera  0 & 2 , check status X+"
+		setprop debug.VFE_dual 1
+		log -p d -t DualCamera "+ opencamera  0 & 2+"
+		am start -n com.example.cameratest/.MainActivity --ei cameramode 0 --es logpath "$APK_LOG_FILE" > /dev/null
+	fi
+}
+
+VGAcamera_preview_switch(){
+	#0: off 
+	if [ "$1" == 0 ]; then
+		#echo "================== CameraTest disable sub camera preview start=================" >> $LOGCAT_LOG_FILE
+		setprop persist.camera.mCameraID -1
+		setrawprop 0
+		#am force-stop com.example.cameratest
+		#pid1=`ps | /system/bin/grep com.example.cameratest | busybox awk '{print $1}'`
+		#if [ "$pid1" != "" ]; then
+		log -p d -t DualCamera "+ close camera 1+"
+			am broadcast -a asus.camera.close -f 0x10000000 > /dev/null
+		#else
+			my_exit success
+		#fi
+	fi
+	#1: on
+	if [ "$1" == 1 ]; then
+		#echo "================== CameraTest enable sub camera preview start=================" >> $LOGCAT_LOG_FILE
+		setprop persist.camera.mCameraID 1
+		#disable touch
+		disableTouch;
+		#setprop befor preview
+		setrawprop 1
+
+		#init status before open camera
+		check_all_status
+		setprop debug.VFE_dual 1
+		log -p d -t DualCamera "+ opencamera  1+"
+		am start -n com.example.cameratest/.MainActivity --ei cameramode 3 --es logpath "$APK_LOG_FILE" > /dev/null
+	fi
+}
+
+take_picture_with_af(){
+	#$1 picture file name
+	if [ -f $1.jpg -o -f $1_1.jpg -o -f $1_2.jpg ]; then
+		rm $1*.jpg
+	fi
+	log -p d -t DualCamera "+ take_picture_with_af+"
+	#echo "================== CameraTest Take picture with af command start=================" >> $LOGCAT_LOG_FILE
+	am broadcast -a asus.camera.setsavepath  --es savepath "$1" -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.setparameter --ei flashmode 0 -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.takepicture --ei focusneed 1 --ei rawneed 0 -f 0x10000000 > /dev/null
+
+}
+
+
+
+
+take_picture_with_flash(){
+	#$1 picture file name
+	if [ -f $1.jpg -o -f $1_1.jpg -o -f $1_2.jpg ]; then
+		rm $1*.jpg
+	fi
+	log -p d -t DualCamera "+ take_picture_with_flash+"
+	#echo "================== CameraTest Take picture with flash command start=================" >> $LOGCAT_LOG_FILE
+	am broadcast -a asus.camera.setsavepath  --es savepath "$1" -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.setparameter --ei flashmode 1 -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.takepicture --ei focusneed 0 --ei rawneed 0 -f 0x10000000 > /dev/null
+
+}
+
+dit_af_calibration(){
+	sh /vendor/bin/dit_af_cali $1 $2 $3
+	exit 0
+}
+
+infinity_mode_switch(){
+	#0: off 
+	if [ "$1" == 0 ]; then
+		log -p d -t DualCamera "+ disable infinity mode start+"
+		#echo "================== CameraTest disable infinity mode start=================" >> $LOGCAT_LOG_FILE
+		am broadcast -a asus.camera.setparameter --ei focusmode 0 -f 0x10000000 > /dev/null
+	#1: on
+	elif [ "$1" == 1 ]; then
+		log -p d -t DualCamera "+ enable infinity mode start+"
+		#echo "================== CameraTest enable infinity mode start=================" >> $LOGCAT_LOG_FILE
+		am broadcast -a asus.camera.setparameter --ei focusmode 1 -f 0x10000000 > /dev/null
+	#2: focus
+	elif [ "$1" == 2 ]; then
+		log -p d -t DualCamera "+ enable infinity mode start and focus+"
+		#echo "================== CameraTest enable infinity mode start and focus=================" >> $LOGCAT_LOG_FILE
+		am broadcast -a asus.camera.setparameter --ei focusmode 2 -f 0x10000000 > /dev/null
+	else
+		echo "0:off; 1:on; 2:focus"
+		exit 0
+	fi
+}
+
+take_picture(){
+	#$1 picture file name
+	if [ -f $1.jpg -o -f $1_1.jpg -o -f $1_2.jpg ]; then
+		rm $1*.jpg
+	fi
+	log -p d -t DualCamera "+ take_picture+"
+	#echo "================== CameraTest Take picture command start=================" >> $LOGCAT_LOG_FILE
+	am broadcast -a asus.camera.setsavepath  --es savepath "$1" -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.setparameter --ei flashmode 0 -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.takepicture --ei focusneed 0 --ei rawneed 0 -f 0x10000000 > /dev/null
+
+}
+
+take_picture_with_af_with_flash(){
+	#$1 picture file name
+	if [ -f $1.jpg -o -f $1_1.jpg -o -f $1_2.jpg ]; then
+		rm $1*.jpg
+	fi
+	log -p d -t DualCamera "+ take_picture_with_af_with_flash+"
+	#echo "================== CameraTest Take picture with af with flash command start=================" >> $LOGCAT_LOG_FILE
+	am broadcast -a asus.camera.setsavepath  --es savepath "$1" -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.setparameter --ei flashmode 1 -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.takepicture --ei focusneed 1 --ei rawneed 0 -f 0x10000000 > /dev/null
+}
+
+take_raw_picture(){
+	if [ -f $1.raw -o -f $1_1.raw -o -f $1_2.raw ]; then
+		rm $1*.raw
+	fi
+	if [ -f /data/.tmp/*2448*.raw ] || [ -f /data/.tmp/*3024*.raw ]; then
+		rm -rf /data/.tmp/*.raw
+	fi
+	setrawprop 1
+	log -p d -t DualCamera "+ take_raw_picture+"
+	#echo "================== CameraTest Take raw picture command start=================" >> $LOGCAT_LOG_FILE
+	am broadcast -a asus.camera.setsavepath  --es savepath "$1" -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.setparameter --ei flashmode 0 -f 0x10000000 > /dev/null
+	am broadcast -a asus.camera.takepicture --ei focusneed 0 --ei rawneed 1 -f 0x10000000 > /dev/null
+	
+}
+
+
+
+
+calibration(){
+	#echo "================== CameraTest calibration command start=================" >> $LOGCAT_LOG_FILE
+
+	#for dit calibration
+	setprop  persist.camera.zsl_raw 1
+	setprop  persist.camera.raw_yuv 1
+	setprop  persist.camera.snapshot_raw 1
+
+	sh /vendor/bin/dit_cali $1
+        
+	if [ -f "/data/data/cal_rear_result.txt" ]; then
+		camera_status=`cat /data/data/cal_rear_result.txt`		
+	else
+		echo "no cal_rear_result.txt"
+		exit 0
+	fi
+
+	if [ -f "/data/data/cal_rear2_result.txt" ]; then
+		camera_status_1=`cat /data/data/cal_rear2_result.txt`		
+	else
+		echo "no cal_rear2_result.txt"
+		exit 0
+	fi
+	
+	
+	if [ "$camera_status" == 1 -a "$camera_status_1" == 1 ]; then
+    		echo "1"
+	else
+    		echo "0"
+	fi		     
+
+	#for dit calibration
+	setprop  persist.camera.zsl_raw 0
+	setprop  persist.camera.raw_yuv 0
+	setprop  persist.camera.snapshot_raw 0
+	
+	exit 0
+	
+}
+
+get_golden_data(){
+	#echo "================== CameraTest get golden data command start=================" >> $LOGCAT_LOG_FILE
+	
+	#for dit calibration
+	setprop  persist.camera.zsl_raw 1
+	setprop  persist.camera.raw_yuv 1
+	setprop  persist.camera.snapshot_raw 1
+
+	sh /vendor/bin/dit_cali_golden $1
+        if [ "$1" == 0 ]; then
+		if [ -f "/data/data/cal_golden_rear_result.txt" ]; then
+			camera_status=`cat /data/data/cal_golden_rear_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi
+		elif [ -f "/data/cal_golden_rear_result.txt" ]; then
+			camera_status=`cat /data/cal_golden_rear_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi		     
+		else
+			echo "no cal_golden_rear_result.txt"
+		fi
+	elif [ "$1" == 1 ]; then
+		if [ -f "/data/data/cal_golden_front_result.txt" ]; then
+			camera_status=`cat /data/data/cal_golden_front_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi
+		elif [ -f "/data/cal_golden_front_result.txt" ]; then
+			camera_status=`cat /data/cal_golden_front_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi
+		else
+			echo "no cal_golden_front_result.txt"
+		fi
+	elif [ "$1" == 2 ]; then
+		if [ -f "/data/data/cal_golden_rear2_result.txt" ]; then
+			camera_status=`cat /data/data/cal_golden_rear2_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi
+		elif [ -f "/data/cal_golden_rear2_result.txt" ]; then
+			camera_status=`cat /data/cal_golden_rear2_result.txt`
+			if [ "$camera_status" == 1 ]; then
+		    	echo "1"
+			else
+		    	echo "0"
+			fi
+		else
+			echo "no cal_golden_rear2_result.txt"
+		fi
+	fi
+
+	#for dit calibration
+	setprop  persist.camera.zsl_raw 0
+	setprop  persist.camera.raw_yuv 0
+	setprop	 persist.camera.snapshot_raw 0
+	
+	exit 0
+}
+
+
+
+#===============================
+#main 
+#===============================
+
+#wait for system ready
+countB=1;
+while [ $countB -lt 300 ] 
+do 
+       getprop|grep bootcomplete > /dev/null
+       if [ $? == "0" ]; then
+               break
+       fi
+       sleep 1
+let countB+=1
+done
+
+rm -rf $APK_LOG_FILE > /dev/null
+
+brightness=`cat /sys/class/leds/lcd-backlight/brightness`
+
+if [ $brightness = 0 ]; then
+	input keyevent 26
+	sleep 1
+fi
+
+case $1 in
+#Enable/Disable camera preview
+"0")
+    maincamera_preview_switch $2
+    	if [ "$2" == 0 ]; then
+    setprop debug.VFE_dual 0
+		set_timeout $3 'close camera finish'
+	else
+		set_timeout $3 'finish startPreview2'
+	fi
+
+;;
+#Enable/Disable VGA camera prebiew
+"1")
+    VGAcamera_preview_switch $2
+	if [ "$2" == 0 ]; then
+		setprop debug.VFE_dual 0
+		set_timeout $3 'close camera finish'
+	else
+		set_timeout $3 'finish startPreview1'
+	fi
+;;
+#Take picture with af
+"2")
+    take_picture_with_af /sdcard/$2
+	set_timeout_takepic $3 'takePicture finish' /sdcard/$2
+;;
+#Enable or Disable infinity mode
+"3")
+	infinity_mode_switch $2
+		set_timeout_infinity "6" 'focus success'
+;;
+#Take picture 
+"4")
+    take_picture /sdcard/$2
+	set_timeout_takepic $3 'takePicture finish' /sdcard/$2
+
+;;
+#Take raw picture 
+"5")
+    take_raw_picture  /sdcard/$2
+		set_timeout_takepic_raw $3 'null' /sdcard/$2
+;;
+#calibration 
+"6")
+	calibration DUAL_$2
+ 
+;;
+#Get golden data 
+"7")
+	get_golden_data $2
+
+;;
+#set rk take picture function
+"8")
+
+	if [ "$2" == 0 ]; then
+		setprop  persist.camera.rk.takepic 0   #disable rk take picture 
+	elif [ "$2" == 1 ]; then
+		setprop  persist.camera.rk.takepic 1   #enable rk take picture 
+	fi
+;;
+## Take picture command with af with flash
+"9")
+   take_picture_with_af_with_flash /sdcard/$2
+	set_timeout_takepic $3 'takePicture finish' /sdcard/$2
+;;
+## Take picture command  with flash
+"10")
+    take_picture_with_flash /sdcard/$2
+	set_timeout_takepic $3 'takePicture finish' /sdcard/$2
+;;
+## DIT af calibration
+"11")
+
+    dit_af_calibration $2 $3 $4
+		
+;;
+*)
+    help
+;;
+esac
+
+my_exit success
+
+
+
+
+
+
+
+
+
+
+
+

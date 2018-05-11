@@ -1,0 +1,16 @@
+#
+# ADDITIONAL_DEFAULT_PROPERTIES
+#
+ro.secure=1
+security.perf_harden=1
+ro.adb.secure=1
+ro.allow.mock.location=0
+ro.debuggable=0
+#
+# BOOTIMAGE_BUILD_PROPERTIES
+#
+ro.bootimage.build.date=Fri Apr 6 22:26:59 CST 2018
+ro.bootimage.build.date.utc=1523024819
+ro.bootimage.build.fingerprint=asus/WW_Phone/ASUS_X00QD:8.0.0/OPR1.170623.032/15.0615.1803.60-0:user/release-keys
+persist.sys.usb.config=none
+
