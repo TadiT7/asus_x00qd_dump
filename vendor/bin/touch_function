@@ -1,0 +1,113 @@
+#!/system/bin/sh
+#echo "$0 $*"> /proc/fac_printklog
+my_exit() {
+if [ -f "/sys/class/input/input1/touch_function" ] ;then
+	temp1=$(cat /sys/class/input/input1/touch_function)
+	if [ "$temp" == "1" ]
+	then
+		if [ "$temp1" == "1" ]
+		then
+    		echo "Enable OK"
+		elif [ "$temp1" == "0" ]
+		then
+			echo "Enable Fail"
+		else
+		 	echo "Fail"
+		fi
+	elif [ "$temp" == "0" ]
+	then
+		if [ "$temp1" == "0" ]
+		then
+    		echo "Disable OK"
+		elif [ "$temp1" == "1" ]
+		then
+			echo "Disable Fail"
+		else
+		 	echo "Fail"
+		fi
+	else
+		echo "Fail"
+	fi
+elif [ -f "/sys/bus/i2c/devices/i2c-4/4-0038/fts_test" ] ;then
+	status=$(cat /sys/bus/i2c/devices/i2c-4/4-0038/disable_touch)
+	if [ "$temp" == "1" ]
+	then
+		if [ "$status" == "1" ]
+		then
+    		echo "Enable OK"
+		elif [ "$status" == "0" ]
+		then
+			echo "Enable Fail"
+		else
+		 	echo "Fail"
+		fi
+	elif [ "$temp" == "0" ]
+	then
+		if [ "$status" == "0" ]
+		then
+    		echo "Disable OK"
+		elif [ "$status" == "1" ]
+		then
+			echo "Disable Fail"
+		else
+		 	echo "0 $stauts Fail"
+		fi
+	else
+		echo "Fail"
+	fi
+else
+	echo "No this Panel"	
+fi
+}
+
+help() {
+    echo "
+API: ATD TestCommand Interface 
+
+FORMAT: adb shell /data/data/touch_function Para1
+
+RETURN VALUE: 0/1   (0 = fail , 1 = pass)
+
+USAGE:
+  <Disable touch funtion.>
+    (para1) 0
+
+  <Enable touch funtion.>
+    (para1) 1
+
+"
+exit 0
+}
+
+#===============================
+#main 
+#===============================
+
+temp=$1
+case $1 in
+#Disable touch funtion
+"0")
+if [ -f "/sys/class/input/input1/touch_function" ] ;then
+    echo 0 > /sys/class/input/input1/touch_function
+elif [ -f "/sys/bus/i2c/devices/i2c-4/4-0038/fts_test" ] ;then
+	echo 0 >/sys/bus/i2c/devices/i2c-4/4-0038/disable_touch
+else
+	echo "No this Panel"	
+fi
+;;
+#Enable touch funtion
+"1")
+if [ -f "/sys/class/input/input1/touch_function" ] ;then
+    echo 1 > /sys/class/input/input1/touch_function
+elif [ -f "/sys/bus/i2c/devices/i2c-4/4-0038/fts_test" ] ;then
+	echo 1 >/sys/bus/i2c/devices/i2c-4/4-0038/disable_touch
+else
+	echo "No this Panel"	
+fi
+;;
+*)
+    help
+;;
+esac
+
+my_exit success

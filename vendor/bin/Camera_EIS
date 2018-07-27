@@ -1,0 +1,15 @@
+#!/system/bin/sh
+
+case $1 in
+	"0")
+	setprop debug.camera.EIS.invs 0;
+	echo 1 ;
+	;;
+	"1")
+	setprop debug.camera.EIS.invs 1;
+	echo 1;
+	;;
+	*)
+	echo "Invalid argument!!"
+	;;
+esac

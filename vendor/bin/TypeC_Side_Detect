@@ -1,0 +1,12 @@
+side=`cat /sys/class/power_supply/battery/device/TypeC_Side_Detect`
+
+if [ "$side" -eq "0" ]; then
+	echo 0
+
+elif [ "$side" -eq "1" ]; then
+	echo 1
+
+elif [ "$side" -eq "2" ]; then
+	echo 2
+
+fi

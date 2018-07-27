@@ -1,0 +1,31 @@
+#!/system/bin/sh
+
+LOG_TAG=hostapd_cmd
+
+#record debug information to logcat log
+logd () {
+    /system/bin/log -t $LOG_TAG -p d "$@"
+}
+
+ACTION=`getprop persist.sys.wifi.hostapd.cmd`
+
+log -t $LOG_TAG -p d hostapd_cmd enter
+
+if [ "$ACTION" = "add_reload" -o "$ACTION" = "remove_reload" ]
+then
+hostapd_cli -p/data/misc/wifi/hostapd/ctrl -iwlan0 set macaddr_acl 1
+hostapd_cli -p/data/misc/wifi/hostapd/ctrl -iwlan0 set accept_mac_file /data/misc/wifi/hostapd.accept
+log -t $LOG_TAG -p d "$ACTION"
+elif [ "$ACTION" = "unload" ]
+then
+hostapd_cli -p/data/misc/wifi/hostapd/ctrl -iwlan0 set macaddr_acl 0
+hostapd_cli -p/data/misc/wifi/hostapd/ctrl -iwlan0 set deny_mac_file /data/misc/wifi/hostapd.deny
+log -t $LOG_TAG -p d "$ACTION"
+elif [ "$ACTION" = "DISASSOCIATE" ]
+then
+TARGET=`getprop persist.sys.wifi.hostapd.target`
+hostapd_cli -p/data/misc/wifi/hostapd/ctrl -iwlan0 $ACTION $TARGET
+/system/bin/log -t $LOG_TAG -p d "$ACTION" "$TARGET"
+fi
+
+exit 0

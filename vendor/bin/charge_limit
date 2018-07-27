@@ -1,0 +1,56 @@
+driver_path="/sys/class/power_supply/battery/device/charger_limit_percent"
+factory_path="/factory/charge_soc_limit"
+
+handle(){
+
+
+	factory=`cat  "$factory_path"`
+	`echo "$factory" > "$driver_path"`
+	sleep 0.01
+	driver=`cat  "$driver_path"`
+
+	if [ -n "$1" ]; then
+		if [ "factory" -eq "$driver" ]; then
+			echo PASS
+		else
+			echo FAIL
+		fi
+	else
+		echo "$driver"
+	fi	
+
+}
+
+if [ -n "$1" ]; then
+	export CMD=$1
+
+	if [ "$1" -lt "0" ] || [ "$1" -gt "100" ]; then
+		echo "arg should be 0 to 100, where 0 for disabling charge-limit."
+		exit
+	fi
+	
+	`echo "$CMD" > "$factory_path"`
+
+	handle "$CMD"
+
+
+
+else 
+	if [ -e "$factory_path" ]; then
+		handle
+	else
+		echo FAIL
+	fi
+
+	
+fi
+
+
+
+
+
+
+
+
+
+

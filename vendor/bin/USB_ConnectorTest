@@ -1,0 +1,31 @@
+if [ -n "$1" ]; then
+	export CMD=$1
+else
+	echo "Please enter NTC parameter!"
+	exit
+fi
+
+if [ "$CMD" -eq "0" ]; then
+	status=`cat /sys/class/power_supply/battery/device/usb_low_impedance`
+
+	if [ "$status" -eq "0" ]; then
+		echo PASS
+
+	elif [ "$status" -eq "1" ]; then
+		echo FAIL
+
+	fi
+
+elif [ "$CMD" -eq "1" ]; then
+
+	status=`cat /sys/class/power_supply/battery/device/BMMI_LID_raised`
+
+	if [ "$status" -eq "1" ]; then
+		echo PASS
+
+	elif [ "$status" -eq "0" ]; then
+		echo FAIL
+
+	fi
+
+fi

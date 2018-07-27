@@ -1,0 +1,20 @@
+{
+  "previous_sp_rules": [
+     {
+       "type": 1,
+       "find": "b",
+       "replaced_by": "b_2"
+     },
+     {
+       "type": 1,
+       "find": "a",
+       "replaced_by": "a_2"
+     },
+     {
+       "type": 1,
+       "find": "h",
+       "replaced_by": "a_2"
+     }
+  ],
+  "enable_multiple_rules": false
+}

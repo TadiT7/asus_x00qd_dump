@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <package name="com.futuredial.asusdatatransfer" fillNotch="true" locked="true" />
+    <package name="com.google.android.gms" fillNotch="true" locked="true" />
+    <package name="com.google.android.setupwizard" fillNotch="true" locked="true" />
+    <window name="com.google.android.youtube/com.google.android.apps.youtube.app.WatchWhileActivity" fillNotch="true" locked="true" minAspect="2.0" />
+    <window name="com.google.android.apps.docs/com.google.android.apps.viewer.ProjectorActivity" fillNotch="false" locked="true" />
+    <switch name="gamegenie" enable="true" />
+    <switch name="system" enable="false" />
+</config>

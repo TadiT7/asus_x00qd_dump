@@ -1,0 +1,21 @@
+#!/system/bin/sh
+INDEX=0
+
+while [ $INDEX -lt $1 ]
+do
+	su -0 stop cameraserver
+	sleep 0.2
+	#stop qcamerasvr
+	sleep 0.2
+	INDEX=$(($INDEX+1))
+	result1=`getprop init.svc.cameraserver`
+	#result2=`getprop init.svc.qcamerasvr`
+	#if [ $result1 == "stopped" -a $result2 == "stopped" ]; then
+	if [ $result1 == "stopped" ]; then
+		su -0 start cameraserver
+		#start qcamerasvr
+		echo "1";
+		exit 0
+	fi
+done
+echo "0"

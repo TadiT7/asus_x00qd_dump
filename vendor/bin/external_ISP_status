@@ -1,0 +1,13 @@
+#!/system/bin/sh
+#check rk_preisp status
+if   [ -f "/system/bin/preisp_io" ]; then
+	echo on > /dev/rk_preisp
+	sleep 0.2
+	isp_status=`/system/bin/preisp_io 0x12030200 | grep 0ff0aa55 | wc -l`
+	echo "$isp_status"
+	echo off > /dev/rk_preisp
+	sleep 0.2
+else
+	echo "0"
+fi
+

@@ -1,0 +1,20 @@
+STATUS="/proc/driver/ois_status"
+LOG="/proc/fac_printklog"
+
+function usage()
+{
+    echo "
+API: ATD TestCommand Interface
+
+Format: adb shell /data/data/Camera_OIS_Power
+"
+}
+
+function cat_probe_status()
+{
+	cat $STATUS
+}
+
+[ -e $LOG ] && echo "$0 $*"> $LOG
+
+cat_probe_status

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <fullscreen package="air.com.peppapig.paintbox" />
+    <fullscreen package="com.dianping.v1" />
+    <fullscreen package="com.facebook.lite" />
+    <fullscreen package="com.feib.appbank" />
+    <fullscreen package="com.google.android.media.gts" />
+    <fullscreen package="com.netflix.mediaclient" />
+    <fullscreen package="com.opera.mini.native" />
+    <fullscreen package="com.uc.vmate" />
+    <fullscreen package="com.vng.inputmethod.labankey" />
+    <sixteen-nine package="com.appon.kitchenstory" />
+    <sixteen-nine package="com.fingersoft.makemore" />
+    <sixteen-nine package="com.jiannianggame.tw" />
+    <sixteen-nine package="jp.co.mixi.monsterstrikeTW" />
+    <sixteen-nine package="si.pilcom.apps.pizzamakerkids" />
+    <sixteen-nine package="tw.wonderplanet.CrashFever" />
+    <sixteen-nine package="tw.sonet.wiz" />
+</config>

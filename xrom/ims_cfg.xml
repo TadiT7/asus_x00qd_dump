@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<carrier_config_list>
+    <version>araASUS009_001</version>
+
+    <!-- TW_TWM -->
+    <carrier_config mcc="466" mnc="97">
+        <boolean name="carrier_volte_available_bool" value="true" />
+    </carrier_config>
+
+    <!-- HK_3HK -->
+    <carrier_config mcc="454" mnc="03">
+        <boolean name="carrier_wfc_ims_available_bool" value="false" />
+        <boolean name="carrier_volte_available_bool" value="true" />
+    </carrier_config>
+
+    <!-- HK_Smartone -->
+    <carrier_config mcc="454" mnc="06">
+        <boolean name="carrier_volte_available_bool" value="true" />
+        <boolean name="carrier_wfc_ims_available_bool" value="false" />
+        <boolean name="carrier_wfc_ims_roaming_available_bool" value="false" />
+    </carrier_config>
+
+</carrier_config_list>

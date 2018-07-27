@@ -1,0 +1,6 @@
+#!/system/bin/sh
+if [ "$#" -lt 2 ]; then
+	echo "FAIL - need 2 parameters"
+else
+	/vendor/bin/ditbsp 0 0 $1 $2 0
+fi

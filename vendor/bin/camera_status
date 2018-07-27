@@ -1,0 +1,30 @@
+#!/system/bin/sh
+case $1 in
+"0")
+	if   [ -f "/sys/camera_status_camera/camera_status" ];
+	then
+	camera_status=`cat /sys/camera_status_camera/camera_status`
+	if [ ${camera_status:0:3} = "ACK" ]; then
+    		echo "1"
+	else
+    		echo "0"
+        fi
+	else
+	echo "0"
+	fi
+;;
+"1")
+	if   [ -f "/sys/camera_status_camera_2/camera_status_2" ];
+	then
+	camera_status_2=`cat /sys/camera_status_camera_2/camera_status_2`
+	if [ ${camera_status_2:0:3} = "ACK" ]; then
+    		echo "1"
+	else
+    		echo "0"
+        fi
+	else
+	echo "0"
+	fi
+;;
+
+esac
